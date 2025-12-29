@@ -1,27 +1,75 @@
-import { api, HydrateClient } from "~/trpc/server";
+"use client";
 
-import UploadButtonTest from "./_components/UploadButton";
+import Link from "next/link";
+import { api } from "~/trpc/react";
+import { CheckInListItem } from "~/components/CheckInListItem";
+import { CheckInListSkeleton } from "~/components/LoadingSkeleton";
+import { EmptyState } from "~/components/EmptyState";
 
-export default async function Home() {
-  const hello = await api.post.hello({ text: "from tRPC" });
-
-  void api.post.getLatest.prefetch();
+export default function HomePage() {
+  const { data: checkIns, isLoading, error } = api.checkIn.getAll.useQuery();
 
   return (
-    <HydrateClient>
-      <main className="flex min-h-screen flex-col items-center justify-center">
-        <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
-          <div className="flex flex-col items-center gap-2 text-black">
-            {/* <p className="text-2xl">
-              {hello ? hello.greeting : "Loading tRPC query..."}
-            </p> */}
-
-            <UploadButtonTest />
-          </div>
-
-          {/* <LatestPost /> */}
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-zinc-900">Check-Ins</h1>
+          <p className="text-sm text-zinc-500">
+            Your fitness progress timeline
+          </p>
         </div>
-      </main>
-    </HydrateClient>
+
+        <Link
+          href="/new-check-in"
+          className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-800 active:scale-95"
+        >
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 4.5v15m7.5-7.5h-15"
+            />
+          </svg>
+          New
+        </Link>
+      </div>
+
+      {/* Error state */}
+      {error && (
+        <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600">
+          Failed to load check-ins. Please try again.
+        </div>
+      )}
+
+      {/* Loading state */}
+      {isLoading && <CheckInListSkeleton />}
+
+      {/* Empty state */}
+      {!isLoading && !error && checkIns?.length === 0 && <EmptyState />}
+
+      {/* Check-in list */}
+      {!isLoading && !error && checkIns && checkIns.length > 0 && (
+        <div className="space-y-3">
+          {checkIns.map((checkIn) => (
+            <CheckInListItem
+              key={checkIn.id}
+              id={checkIn.id}
+              date={checkIn.date}
+              weight={checkIn.weight}
+              frontPhoto={checkIn.frontPhoto}
+              sidePhoto={checkIn.sidePhoto}
+              backPhoto={checkIn.backPhoto}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
