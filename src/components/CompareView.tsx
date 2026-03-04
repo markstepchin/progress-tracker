@@ -100,13 +100,21 @@ export function CompareView({ checkIns }: CompareViewProps) {
                 onClick={() => openModal(checkIn, index)}
                 className="group relative aspect-[4/5] overflow-hidden rounded-lg bg-zinc-100 transition-transform active:scale-[0.98]"
               >
-                <Image
-                  src={photo.src}
-                  alt={photo.label}
-                  fill
-                  className="object-cover transition-opacity group-hover:opacity-90"
-                  sizes="(max-width: 768px) 30vw, 150px"
-                />
+                {photo.src && photo.src.includes('ufs.sh') ? (
+                  <img
+                    src={photo.src}
+                    alt={photo.label}
+                    className="h-full w-full object-cover transition-opacity group-hover:opacity-90"
+                  />
+                ) : (
+                  <Image
+                    src={photo.src}
+                    alt={photo.label}
+                    fill
+                    className="object-cover transition-opacity group-hover:opacity-90"
+                    sizes="(max-width: 768px) 30vw, 150px"
+                  />
+                )}
                 <span className="absolute bottom-1 left-1 rounded bg-black/50 px-1.5 py-0.5 text-xs font-medium text-white">
                   {photo.label}
                 </span>

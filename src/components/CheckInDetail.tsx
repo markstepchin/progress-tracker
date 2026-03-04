@@ -103,13 +103,21 @@ export function CheckInDetail({
               }}
               className="group relative aspect-[4/5] overflow-hidden rounded-lg bg-zinc-100 transition-transform active:scale-[0.98]"
             >
-              <Image
-                src={photo.src}
-                alt={photo.label}
-                fill
-                className="object-cover transition-opacity group-hover:opacity-90"
-                sizes="(max-width: 768px) 33vw, 200px"
-              />
+              {photo.src && photo.src.includes("ufs.sh") ? (
+                <img
+                  src={photo.src}
+                  alt={photo.label}
+                  className="h-full w-full object-cover transition-opacity group-hover:opacity-90"
+                />
+              ) : (
+                <Image
+                  src={photo.src}
+                  alt={photo.label}
+                  fill
+                  className="object-cover transition-opacity group-hover:opacity-90"
+                  sizes="(max-width: 768px) 33vw, 200px"
+                />
+              )}
               <span className="absolute bottom-2 left-2 rounded-full bg-black/50 px-2 py-0.5 text-xs font-medium text-white backdrop-blur-sm">
                 {photo.label}
               </span>

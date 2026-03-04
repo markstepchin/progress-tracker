@@ -138,14 +138,22 @@ export function PhotoModal({
         className="relative h-[80vh] w-[90vw] max-w-3xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <Image
-          src={currentPhoto.src}
-          alt={currentPhoto.label}
-          fill
-          className="object-contain"
-          sizes="90vw"
-          priority
-        />
+        {currentPhoto.src && (currentPhoto.src.includes('utfs.io') || currentPhoto.src.includes('ufs.sh')) ? (
+          <img
+            src={currentPhoto.src}
+            alt={currentPhoto.label}
+            className="h-full w-full object-contain"
+          />
+        ) : (
+          <Image
+            src={currentPhoto.src}
+            alt={currentPhoto.label}
+            fill
+            className="object-contain"
+            sizes="90vw"
+            priority
+          />
+        )}
       </div>
 
       {/* Dots indicator */}

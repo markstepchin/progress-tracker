@@ -14,7 +14,6 @@ interface PhotoAssignment {
 
 export function CreateCheckInForm() {
   const router = useRouter();
-  const [step, setStep] = useState<"upload" | "details">("upload");
   const [photos, setPhotos] = useState<PhotoAssignment | null>(null);
   const [date, setDate] = useState(formatDateForInput(new Date()));
   const [weight, setWeight] = useState("");
@@ -34,7 +33,6 @@ export function CreateCheckInForm() {
 
   const handlePhotosAssigned = (assignedPhotos: PhotoAssignment) => {
     setPhotos(assignedPhotos);
-    setStep("details");
     setError(null);
   };
 
@@ -71,12 +69,6 @@ export function CreateCheckInForm() {
     }
   };
 
-  const goBackToUpload = () => {
-    setStep("upload");
-    setPhotos(null);
-    setError(null);
-  };
-
   return (
     <div className="space-y-6">
       {error && (
@@ -85,14 +77,12 @@ export function CreateCheckInForm() {
         </div>
       )}
 
-      {step === "upload" && (
+      {!photos ? (
         <PhotoUploadFlow
           onPhotosAssigned={handlePhotosAssigned}
           onError={handlePhotoError}
         />
-      )}
-
-      {step === "details" && photos && (
+      ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Photo preview */}
           <div className="space-y-2">
@@ -100,7 +90,7 @@ export function CreateCheckInForm() {
               <h3 className="text-sm font-medium text-zinc-900">Photos</h3>
               <button
                 type="button"
-                onClick={goBackToUpload}
+                onClick={() => setPhotos(null)}
                 className="text-xs text-zinc-500 hover:text-zinc-700"
               >
                 Change photos

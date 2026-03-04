@@ -3,13 +3,9 @@
 import Image from "next/image";
 import { useState, useCallback } from "react";
 import { UploadDropzone } from "~/utils/uploadthing";
+import heic2any from "heic2any";
 
 type PhotoPosition = "front" | "side" | "back";
-
-interface UploadedPhoto {
-  url: string;
-  position: PhotoPosition | null;
-}
 
 interface PhotoAssignment {
   frontPhotoUrl: string;
@@ -22,168 +18,185 @@ interface PhotoUploadFlowProps {
   onError: (error: string) => void;
 }
 
+interface PhotoState {
+  front: string | null;
+  side: string | null;
+  back: string | null;
+}
+
 export function PhotoUploadFlow({
   onPhotosAssigned,
   onError,
 }: PhotoUploadFlowProps) {
-  const [uploadedPhotos, setUploadedPhotos] = useState<UploadedPhoto[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
+  const [photos, setPhotos] = useState<PhotoState>({
+    front: null,
+    side: null,
+    back: null,
+  });
+  const [uploading, setUploading] = useState<PhotoPosition | null>(null);
 
-  const handleUploadComplete = useCallback((res: { url: string }[]) => {
-    setIsUploading(false);
-    const newPhotos: UploadedPhoto[] = res.map((file) => ({
-      url: file.url,
-      position: null,
-    }));
-    setUploadedPhotos(newPhotos);
-  }, []);
+  const handleUploadComplete = useCallback(
+    (position: PhotoPosition) => (res: { ufsUrl: string }[]) => {
+      setUploading(null);
+      if (res.length > 0) {
+        setPhotos((prev) => ({
+          ...prev,
+          [position]: res[0].ufsUrl,
+        }));
+      }
+    },
+    [],
+  );
 
   const handleUploadError = useCallback(
     (error: Error) => {
-      setIsUploading(false);
-      onError(error.message || "Failed to upload photos");
+      setUploading(null);
+      onError(error.message || "Failed to upload photo");
     },
     [onError],
   );
 
-  const handlePositionChange = (index: number, position: PhotoPosition) => {
-    setUploadedPhotos((prev) => {
-      const updated = prev.map((photo, i) => {
-        if (i === index) {
-          return { ...photo, position };
-        }
-        // Remove this position from other photos
-        if (photo.position === position) {
-          return { ...photo, position: null };
-        }
-        return photo;
+  const convertHeicToJpeg = useCallback(async (file: File): Promise<File> => {
+    if (
+      !file.name.toLowerCase().endsWith(".heic") &&
+      !file.type.includes("heic")
+    ) {
+      return file;
+    }
+
+    try {
+      const jpegBlob = await heic2any({
+        blob: file,
+        toType: "image/jpeg",
+        quality: 0.8,
       });
-      return updated;
-    });
+
+      return new File(
+        [jpegBlob as Blob],
+        file.name.replace(/\.heic$/i, ".jpg"),
+        { type: "image/jpeg" },
+      );
+    } catch (error) {
+      console.warn("HEIC conversion failed, using original file:", error);
+      return file;
+    }
+  }, []);
+
+  const handleUploadBegin = useCallback(
+    (position: PhotoPosition) => () => {
+      setUploading(position);
+    },
+    [],
+  );
+
+  const removePhoto = (position: PhotoPosition) => {
+    setPhotos((prev) => ({
+      ...prev,
+      [position]: null,
+    }));
   };
 
-  const handleConfirmAssignment = () => {
-    const front = uploadedPhotos.find((p) => p.position === "front");
-    const side = uploadedPhotos.find((p) => p.position === "side");
-    const back = uploadedPhotos.find((p) => p.position === "back");
+  const allPhotosUploaded = photos.front && photos.side && photos.back;
 
-    if (!front || !side || !back) {
-      onError("Please assign all photos: Front, Side, and Back");
+  const handleConfirmPhotos = () => {
+    if (!allPhotosUploaded) {
+      onError("Please upload all three photos: Front, Side, and Back");
       return;
     }
 
     onPhotosAssigned({
-      frontPhotoUrl: front.url,
-      sidePhotoUrl: side.url,
-      backPhotoUrl: back.url,
+      frontPhotoUrl: photos.front!,
+      sidePhotoUrl: photos.side!,
+      backPhotoUrl: photos.back!,
     });
   };
 
-  const allPositionsAssigned =
-    uploadedPhotos.length === 3 &&
-    uploadedPhotos.every((p) => p.position !== null);
+  const photoInputs = [
+    { position: "front" as PhotoPosition, label: "Front Photo" },
+    { position: "side" as PhotoPosition, label: "Side Photo" },
+    { position: "back" as PhotoPosition, label: "Back Photo" },
+  ];
 
-  const resetUpload = () => {
-    setUploadedPhotos([]);
-  };
-
-  // Show upload dropzone if no photos uploaded yet
-  if (uploadedPhotos.length === 0) {
-    return (
-      <div className="space-y-4">
-        <div className="text-center">
-          <h3 className="mb-1 text-sm font-medium text-zinc-900">
-            Upload 3 Photos
-          </h3>
-          <p className="text-xs text-zinc-500">Front, Side, and Back views</p>
-        </div>
-
-        <UploadDropzone
-          endpoint="imageUploader"
-          onUploadBegin={() => setIsUploading(true)}
-          onClientUploadComplete={handleUploadComplete}
-          onUploadError={handleUploadError}
-          config={{ mode: "auto" }}
-          appearance={{
-            container:
-              "border-2 border-dashed border-zinc-300 rounded-xl p-8 bg-zinc-50 hover:bg-zinc-100 transition-colors cursor-pointer",
-            uploadIcon: "text-zinc-400 w-12 h-12",
-            label: "text-zinc-600 text-sm",
-            allowedContent: "text-zinc-400 text-xs",
-            button:
-              "bg-zinc-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-zinc-800 ut-uploading:bg-zinc-500",
-          }}
-          content={{
-            label: isUploading ? "Uploading..." : "Select exactly 3 photos",
-            allowedContent: "Images up to 8MB each",
-          }}
-        />
-      </div>
-    );
-  }
-
-  // Show assignment UI
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-zinc-900">
-          Assign Photo Positions
+    <div className="space-y-6">
+      <div className="text-center">
+        <h3 className="mb-1 text-sm font-medium text-zinc-900">
+          Upload Your Progress Photos
         </h3>
-        <button
-          type="button"
-          onClick={resetUpload}
-          className="text-xs text-zinc-500 hover:text-zinc-700"
-        >
-          Reset
-        </button>
+        <p className="text-xs text-zinc-500">Take photos from three angles</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
-        {uploadedPhotos.map((photo, index) => (
-          <div key={index} className="space-y-2">
-            <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-zinc-100">
-              <Image
-                src={photo.url}
-                alt={`Photo ${index + 1}`}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 30vw, 150px"
-              />
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+        {photoInputs.map(({ position, label }) => (
+          <div key={position} className="space-y-3">
+            <div className="text-center">
+              <h4 className="text-sm font-medium text-zinc-900">{label}</h4>
             </div>
 
-            <select
-              value={photo.position ?? ""}
-              onChange={(e) =>
-                handlePositionChange(index, e.target.value as PhotoPosition)
-              }
-              className={`w-full rounded-lg border px-2 py-1.5 text-sm focus:ring-2 focus:ring-zinc-400 focus:outline-none ${
-                photo.position
-                  ? "border-zinc-900 bg-zinc-900 text-white"
-                  : "border-zinc-200 bg-white text-zinc-600"
-              }`}
-            >
-              <option value="">Select...</option>
-              <option value="front">Front</option>
-              <option value="side">Side</option>
-              <option value="back">Back</option>
-            </select>
+            {photos[position] ? (
+              <div className="space-y-2">
+                <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-zinc-100">
+                  <img
+                    src={photos[position]!}
+                    alt={label}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removePhoto(position)}
+                  className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs text-zinc-600 transition-colors hover:bg-zinc-50"
+                >
+                  Replace Photo
+                </button>
+              </div>
+            ) : (
+              <UploadDropzone
+                endpoint="imageUploader"
+                onUploadBegin={handleUploadBegin(position)}
+                onClientUploadComplete={(res) =>
+                  handleUploadComplete(position)(res, [])
+                }
+                onUploadError={handleUploadError}
+                config={{
+                  mode: "auto",
+                  onBeforeUploadBegin: async (files) => {
+                    // Convert HEIC files to JPEG before upload
+                    const convertedFiles = await Promise.all(
+                      files.map((file) => convertHeicToJpeg(file)),
+                    );
+                    return convertedFiles;
+                  },
+                }}
+                appearance={{
+                  container:
+                    "border-2 border-dashed border-zinc-300 rounded-lg p-6 bg-zinc-50 hover:bg-zinc-100 transition-colors cursor-pointer",
+                  uploadIcon: "text-zinc-400 w-8 h-8",
+                  label: "text-zinc-600 text-sm",
+                  allowedContent: "text-zinc-400 text-xs",
+                  button:
+                    "bg-zinc-900 text-white px-3 py-2 rounded text-sm font-medium hover:bg-zinc-800 ut-uploading:bg-zinc-500",
+                }}
+                content={{
+                  label:
+                    uploading === position ? "Uploading..." : "Upload photo",
+                  allowedContent: "Up to 8MB • HEIC supported",
+                }}
+              />
+            )}
           </div>
         ))}
       </div>
 
-      {uploadedPhotos.length !== 3 && (
-        <p className="text-center text-sm text-amber-600">
-          Please upload exactly 3 photos. You uploaded {uploadedPhotos.length}.
-        </p>
-      )}
-
       <button
         type="button"
-        onClick={handleConfirmAssignment}
-        disabled={!allPositionsAssigned}
-        className="w-full rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-300"
+        onClick={handleConfirmPhotos}
+        disabled={!allPhotosUploaded}
+        className="w-full rounded-lg bg-zinc-900 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-400"
       >
-        {allPositionsAssigned ? "Confirm Photos" : "Assign all positions"}
+        {allPhotosUploaded
+          ? "Continue to Details"
+          : "Upload all photos to continue"}
       </button>
     </div>
   );
