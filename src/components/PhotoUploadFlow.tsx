@@ -41,7 +41,7 @@ export function PhotoUploadFlow({
       if (res.length > 0) {
         setPhotos((prev) => ({
           ...prev,
-          [position]: res[0].ufsUrl,
+          [position]: res[0]?.ufsUrl,
         }));
       }
     },
@@ -154,19 +154,19 @@ export function PhotoUploadFlow({
               <UploadDropzone
                 endpoint="imageUploader"
                 onUploadBegin={handleUploadBegin(position)}
+                onBeforeUploadBegin={async (files) => {
+                  // Convert HEIC files to JPEG before upload
+                  const convertedFiles = await Promise.all(
+                    files.map((file) => convertHeicToJpeg(file)),
+                  );
+                  return convertedFiles;
+                }}
                 onClientUploadComplete={(res) =>
-                  handleUploadComplete(position)(res, [])
+                  handleUploadComplete(position)(res)
                 }
                 onUploadError={handleUploadError}
                 config={{
                   mode: "auto",
-                  onBeforeUploadBegin: async (files) => {
-                    // Convert HEIC files to JPEG before upload
-                    const convertedFiles = await Promise.all(
-                      files.map((file) => convertHeicToJpeg(file)),
-                    );
-                    return convertedFiles;
-                  },
                 }}
                 appearance={{
                   container:

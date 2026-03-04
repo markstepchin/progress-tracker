@@ -1,10 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { PhotoUploadFlow } from "./PhotoUploadFlow";
 import { formatDateForInput } from "~/utils/formatters";
 import { api } from "~/trpc/react";
+
+const PhotoUploadFlow = dynamic(
+  () => import("./PhotoUploadFlow").then((m) => ({ default: m.PhotoUploadFlow })),
+  { ssr: false },
+);
 
 interface PhotoAssignment {
   frontPhotoUrl: string;
