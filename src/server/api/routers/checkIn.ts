@@ -1,4 +1,5 @@
 import { z } from "zod";
+import exifr from "exifr";
 
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
@@ -39,6 +40,55 @@ export const checkInRouter = createTRPCRouter({
       return ctx.db.checkIn.findUnique({
         where: { id: input.id },
       });
+    }),
+
+  getImageMetadata: publicProcedure
+    .input(z.object({ urls: z.array(z.string().url()) }))
+    .query(async ({ input }) => {
+      const results = await Promise.all(
+        input.urls.map(
+          async (url): Promise<{
+            size?: number;
+            contentType?: string;
+            lastModified?: string;
+            dateTaken?: string;
+          }> => {
+            try {
+              const res = await fetch(url);
+              const contentType = res.headers.get("content-type") ?? undefined;
+              const lastModified = res.headers.get("last-modified") ?? undefined;
+              const buffer = Buffer.from(await res.arrayBuffer());
+              const size = res.headers.get("content-length")
+                ? parseInt(res.headers.get("content-length")!, 10)
+                : buffer.length;
+
+              let dateTaken: string | undefined;
+              try {
+                const exif = await exifr.parse(buffer, {
+                  pick: ["DateTimeOriginal", "CreateDate"],
+                });
+                const date =
+                  exif?.DateTimeOriginal ?? exif?.CreateDate;
+                if (date instanceof Date && !Number.isNaN(date.getTime())) {
+                  dateTaken = date.toISOString();
+                }
+              } catch {
+                // No EXIF or unsupported format
+              }
+
+              return {
+                size,
+                contentType,
+                lastModified,
+                dateTaken,
+              };
+            } catch {
+              return {};
+            }
+          },
+        ),
+      );
+      return results;
     }),
 
   delete: publicProcedure

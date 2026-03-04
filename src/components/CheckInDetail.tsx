@@ -4,6 +4,12 @@ import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatDateWithDay, formatWeight } from "~/utils/formatters";
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 import { PhotoModal } from "./PhotoModal";
 import { api } from "~/trpc/react";
 
@@ -45,6 +51,12 @@ export function CheckInDetail({
     { src: sidePhoto, label: "Side" },
     { src: backPhoto, label: "Back" },
   ];
+
+  const photoUrls = photos.map((p) => p.src).filter(Boolean);
+  const { data: metadataList } = api.checkIn.getImageMetadata.useQuery(
+    { urls: photoUrls },
+    { enabled: photoUrls.length > 0 },
+  );
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -93,36 +105,58 @@ export function CheckInDetail({
 
         {/* Photos Grid */}
         <div className="grid grid-cols-3 gap-3">
-          {photos.map((photo, index) => (
-            <button
-              key={photo.label}
-              type="button"
-              onClick={() => {
-                setModalIndex(index);
-                setModalOpen(true);
-              }}
-              className="group relative aspect-[4/5] overflow-hidden rounded-lg bg-zinc-100 transition-transform active:scale-[0.98]"
-            >
-              {photo.src && photo.src.includes("ufs.sh") ? (
-                <img
-                  src={photo.src}
-                  alt={photo.label}
-                  className="h-full w-full object-cover transition-opacity group-hover:opacity-90"
-                />
-              ) : (
-                <Image
-                  src={photo.src}
-                  alt={photo.label}
-                  fill
-                  className="object-cover transition-opacity group-hover:opacity-90"
-                  sizes="(max-width: 768px) 33vw, 200px"
-                />
-              )}
-              <span className="absolute bottom-2 left-2 rounded-full bg-black/50 px-2 py-0.5 text-xs font-medium text-white backdrop-blur-sm">
-                {photo.label}
-              </span>
-            </button>
-          ))}
+          {photos.map((photo, index) => {
+            const meta = metadataList?.[index];
+            const dateStr = (meta?.dateTaken ?? meta?.lastModified)
+              ? new Date(meta.dateTaken ?? meta.lastModified!).toLocaleDateString(
+                  undefined,
+                  { dateStyle: "medium" },
+                )
+              : null;
+            const typeStr = meta?.contentType
+              ? meta.contentType.replace(/^image\//i, "").toUpperCase()
+              : null;
+            return (
+              <div key={photo.label} className="space-y-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModalIndex(index);
+                    setModalOpen(true);
+                  }}
+                  className="group relative aspect-4/5 w-full overflow-hidden rounded-lg bg-zinc-100 transition-transform active:scale-[0.98]"
+                >
+                  {photo.src && photo.src.includes("ufs.sh") ? (
+                    <img
+                      src={photo.src}
+                      alt={photo.label}
+                      className="h-full w-full object-cover transition-opacity group-hover:opacity-90"
+                    />
+                  ) : (
+                    <Image
+                      src={photo.src}
+                      alt={photo.label}
+                      fill
+                      className="object-cover transition-opacity group-hover:opacity-90"
+                      sizes="(max-width: 768px) 33vw, 200px"
+                    />
+                  )}
+                  <span className="absolute bottom-2 left-2 rounded-full bg-black/50 px-2 py-0.5 text-xs font-medium text-white backdrop-blur-sm">
+                    {photo.label}
+                  </span>
+                </button>
+                {(dateStr || meta?.size !== undefined || typeStr) && (
+                  <div className="text-xs text-zinc-500 space-y-0.5">
+                    {dateStr && <div>Date: {dateStr}</div>}
+                    {meta?.size !== undefined && (
+                      <div>Size: {formatFileSize(meta.size)}</div>
+                    )}
+                    {typeStr && <div>Type: {typeStr}</div>}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {/* Notes */}
