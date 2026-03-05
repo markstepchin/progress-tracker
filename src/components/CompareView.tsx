@@ -79,16 +79,16 @@ export function CompareView({ checkIns }: CompareViewProps) {
 
       {checkIn ? (
         <div className="rounded-xl border border-zinc-200 bg-white p-4">
-          <div className="mb-3 flex items-baseline justify-between">
+          {/* <div className="mb-3 flex items-baseline justify-between">
             <span className="font-semibold text-zinc-900">
               {formatDate(checkIn.date)}
             </span>
             <span className="text-sm text-zinc-500">
               {formatWeight(checkIn.weight)}
             </span>
-          </div>
+          </div> */}
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="flex flex-col gap-2">
             {[
               { src: checkIn.frontPhoto, label: "Front" },
               { src: checkIn.sidePhoto, label: "Side" },
@@ -100,7 +100,7 @@ export function CompareView({ checkIns }: CompareViewProps) {
                 onClick={() => openModal(checkIn, index)}
                 className="group relative aspect-[4/5] overflow-hidden rounded-lg bg-zinc-100 transition-transform active:scale-[0.98]"
               >
-                {photo.src && photo.src.includes('ufs.sh') ? (
+                {photo.src && photo.src.includes("ufs.sh") ? (
                   <img
                     src={photo.src}
                     alt={photo.label}
@@ -132,53 +132,28 @@ export function CompareView({ checkIns }: CompareViewProps) {
 
   return (
     <>
-      <div className="space-y-6">
-        {renderCheckInCard(checkInA, "First Check-In", selectedA, setSelectedA)}
-
-        {/* Comparison arrow */}
-        <div className="flex justify-center">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-100">
-            <svg
-              className="h-5 w-5 text-zinc-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M19 14l-7 7m0 0l-7-7m7 7V3"
-              />
-            </svg>
-          </div>
+      {/* Weight difference */}
+      {checkInA?.weight && checkInB?.weight && (
+        <div className="rounded-lg bg-zinc-50 p-4 text-center">
+          <span className="text-sm text-zinc-500">Weight Change</span>
+          <p
+            className={`text-xl font-bold ${
+              checkInB.weight < checkInA.weight
+                ? "text-green-600"
+                : checkInB.weight > checkInA.weight
+                  ? "text-red-600"
+                  : "text-zinc-600"
+            }`}
+          >
+            {checkInB.weight < checkInA.weight ? "" : "+"}
+            {(checkInB.weight - checkInA.weight).toFixed(1)} lbs
+          </p>
         </div>
+      )}
+      <div className="flex gap-3 space-y-6">
+        {renderCheckInCard(checkInA, "", selectedA, setSelectedA)}
 
-        {renderCheckInCard(
-          checkInB,
-          "Second Check-In",
-          selectedB,
-          setSelectedB,
-        )}
-
-        {/* Weight difference */}
-        {checkInA?.weight && checkInB?.weight && (
-          <div className="rounded-lg bg-zinc-50 p-4 text-center">
-            <span className="text-sm text-zinc-500">Weight Change</span>
-            <p
-              className={`text-xl font-bold ${
-                checkInB.weight < checkInA.weight
-                  ? "text-green-600"
-                  : checkInB.weight > checkInA.weight
-                    ? "text-red-600"
-                    : "text-zinc-600"
-              }`}
-            >
-              {checkInB.weight < checkInA.weight ? "" : "+"}
-              {(checkInB.weight - checkInA.weight).toFixed(1)} lbs
-            </p>
-          </div>
-        )}
+        {renderCheckInCard(checkInB, "", selectedB, setSelectedB)}
       </div>
 
       {modalOpen && (
