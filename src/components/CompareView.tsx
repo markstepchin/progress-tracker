@@ -5,18 +5,47 @@ import { useState } from "react";
 import { formatDate, formatWeight } from "~/utils/formatters";
 import { ComparePhotoModal } from "./ComparePhotoModal";
 import type { CompareSlide } from "./ComparePhotoModal";
+import { CheckInSelect } from "./CheckInSelect";
 import { EmptyState } from "./EmptyState";
 import type { RouterOutputs } from "~/trpc/react";
 
 type CheckIn = RouterOutputs["checkIn"]["getAll"][number];
 
-interface CompareViewProps {
-  checkIns: CheckIn[];
+export interface ImageSettings {
+  zoom: number;
+  brightness: number;
+  contrast: number;
 }
 
-export function CompareView({ checkIns }: CompareViewProps) {
-  const [selectedA, setSelectedA] = useState<string>("");
-  const [selectedB, setSelectedB] = useState<string>("");
+export interface ImageSettingsSetters {
+  setZoom: (value: number | null) => void;
+  setBrightness: (value: number | null) => void;
+  setContrast: (value: number | null) => void;
+}
+
+interface CompareViewProps {
+  checkIns: CheckIn[];
+  selectedA: string;
+  selectedB: string;
+  setSelectedA: (value: string | null) => Promise<URLSearchParams>;
+  setSelectedB: (value: string | null) => Promise<URLSearchParams>;
+  imageSettingsA: ImageSettings;
+  imageSettingsB: ImageSettings;
+  setImageSettingsA: ImageSettingsSetters;
+  setImageSettingsB: ImageSettingsSetters;
+}
+
+export function CompareView({
+  checkIns,
+  selectedA,
+  selectedB,
+  setSelectedA,
+  setSelectedB,
+  imageSettingsA,
+  imageSettingsB,
+  setImageSettingsA,
+  setImageSettingsB,
+}: CompareViewProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalIndex, setModalIndex] = useState(0);
 
@@ -68,78 +97,65 @@ export function CompareView({ checkIns }: CompareViewProps) {
         ]
       : [];
 
-  const renderCheckInCard = (
-    checkIn: CheckIn | undefined,
-    label: string,
-    selectedValue: string,
-    onSelect: (id: string) => void,
-  ) => (
-    <div className="min-w-0 space-y-3">
-      <div className="flex min-w-0 items-center">
-        <span className="text-sm font-medium text-zinc-500">{label}</span>
-        <select
-          value={selectedValue}
-          onChange={(e) => onSelect(e.target.value)}
-          className="min-w-0 flex-1 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400 focus:outline-none"
-        >
-          <option value="">Select check-in</option>
-          {checkIns.map((c) => (
-            <option key={c.id} value={c.id}>
-              {formatDate(c.date)} - {formatWeight(c.weight)}
-            </option>
-          ))}
-        </select>
-      </div>
+  const renderPhotoCards = (checkIn: CheckIn | undefined) => {
+    if (!checkIn) return null;
 
-      {checkIn ? (
-        <div>
-          <div className="flex flex-col gap-2">
-            {[
-              { src: checkIn.frontPhoto, label: "Front" },
-              { src: checkIn.sidePhoto, label: "Side" },
-              { src: checkIn.backPhoto, label: "Back" },
-            ].map((photo, index) => (
-              <button
-                key={photo.label}
-                type="button"
-                onClick={() =>
-                  checkInA && checkInB ? openCompareModal(index) : undefined
-                }
-                disabled={!(checkInA && checkInB)}
-                className="group relative aspect-[4/5] overflow-hidden rounded-lg bg-zinc-100 transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {photo.src && photo.src.includes("ufs.sh") ? (
-                  <img
-                    src={photo.src}
-                    alt={photo.label}
-                    className="h-full w-full object-cover transition-opacity group-hover:opacity-90"
-                  />
-                ) : (
-                  <Image
-                    src={photo.src}
-                    alt={photo.label}
-                    fill
-                    className="object-cover transition-opacity group-hover:opacity-90"
-                    sizes="(max-width: 768px) 30vw, 150px"
-                  />
-                )}
-                <span className="absolute bottom-1 left-1 rounded bg-black/50 px-1.5 py-0.5 text-xs font-medium text-white">
-                  {photo.label}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="flex aspect-[3/4] items-center justify-center rounded-xl border-2 border-dashed border-zinc-200 bg-zinc-50">
-          <span className="text-sm text-zinc-400">Select a check-in</span>
-        </div>
-      )}
-    </div>
-  );
+    return (
+      <div className="flex flex-col gap-2">
+        {[
+          { src: checkIn.frontPhoto, label: "Front" },
+          { src: checkIn.sidePhoto, label: "Side" },
+          { src: checkIn.backPhoto, label: "Back" },
+        ].map((photo, index) => (
+          <button
+            key={photo.label}
+            type="button"
+            onClick={() =>
+              checkInA && checkInB ? openCompareModal(index) : undefined
+            }
+            disabled={!(checkInA && checkInB)}
+            className="group relative aspect-4/5 overflow-hidden rounded-lg bg-zinc-100 transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {photo.src && photo.src.includes("ufs.sh") ? (
+              <img
+                src={photo.src}
+                alt={photo.label}
+                className="h-full w-full object-cover transition-opacity group-hover:opacity-90"
+              />
+            ) : (
+              <Image
+                src={photo.src}
+                alt={photo.label}
+                fill
+                className="object-cover transition-opacity group-hover:opacity-90"
+                sizes="(max-width: 768px) 30vw, 150px"
+              />
+            )}
+            <span className="absolute bottom-1 left-1 rounded bg-black/50 px-1.5 py-0.5 text-xs font-medium text-white">
+              {photo.label}
+            </span>
+          </button>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <>
+      {/* Selects */}
+      <div className="flex gap-2">
+        <CheckInSelect
+          checkIns={checkIns}
+          value={selectedA}
+          onChange={setSelectedA}
+        />
+        <CheckInSelect
+          checkIns={checkIns}
+          value={selectedB}
+          onChange={setSelectedB}
+        />
+      </div>
+
       {/* Weight difference */}
       {checkInA?.weight && checkInB?.weight && (
         <div className="rounded-lg bg-zinc-50 p-4 text-center">
@@ -158,13 +174,11 @@ export function CompareView({ checkIns }: CompareViewProps) {
           </p>
         </div>
       )}
+
+      {/* Photo cards */}
       <div className="flex gap-1">
-        <div className="min-w-0 flex-1">
-          {renderCheckInCard(checkInA, "", selectedA, setSelectedA)}
-        </div>
-        <div className="min-w-0 flex-1">
-          {renderCheckInCard(checkInB, "", selectedB, setSelectedB)}
-        </div>
+        <div className="min-w-0 flex-1">{renderPhotoCards(checkInA)}</div>
+        <div className="min-w-0 flex-1">{renderPhotoCards(checkInB)}</div>
       </div>
 
       {modalOpen && checkInA && checkInB && (
@@ -177,6 +191,10 @@ export function CompareView({ checkIns }: CompareViewProps) {
           rightWeight={formatWeight(checkInB.weight)}
           onClose={() => setModalOpen(false)}
           onNavigate={setModalIndex}
+          leftImageSettings={imageSettingsA}
+          rightImageSettings={imageSettingsB}
+          setLeftImageSettings={setImageSettingsA}
+          setRightImageSettings={setImageSettingsB}
         />
       )}
     </>

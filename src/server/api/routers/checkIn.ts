@@ -34,6 +34,22 @@ export const checkInRouter = createTRPCRouter({
     });
   }),
 
+  getMilestones: publicProcedure.query(async ({ ctx }) => {
+    const checkIns = await ctx.db.checkIn.findMany({
+      orderBy: { date: "asc" },
+    });
+
+    if (checkIns.length < 2) return [];
+
+    const earliest = checkIns[0]!;
+    const latest = checkIns[checkIns.length - 1]!;
+
+    return [
+      { ...earliest, label: "Start" },
+      { ...latest, label: "Today" },
+    ];
+  }),
+
   getById: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {

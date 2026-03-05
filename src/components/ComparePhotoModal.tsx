@@ -1,7 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useCallback } from "react";
+import { ZoomableImage } from "./ZoomableImage";
+import type { ImageSettings, ImageSettingsSetters } from "./CompareView";
 
 export interface CompareSlide {
   label: string;
@@ -18,10 +19,10 @@ interface ComparePhotoModalProps {
   rightWeight?: string;
   onClose: () => void;
   onNavigate: (index: number) => void;
-}
-
-function isUploadcareUrl(src: string) {
-  return src && (src.includes("utfs.io") || src.includes("ufs.sh"));
+  leftImageSettings?: ImageSettings;
+  rightImageSettings?: ImageSettings;
+  setLeftImageSettings?: ImageSettingsSetters;
+  setRightImageSettings?: ImageSettingsSetters;
 }
 
 export function ComparePhotoModal({
@@ -33,6 +34,10 @@ export function ComparePhotoModal({
   rightWeight,
   onClose,
   onNavigate,
+  leftImageSettings,
+  rightImageSettings,
+  setLeftImageSettings,
+  setRightImageSettings,
 }: ComparePhotoModalProps) {
   const slide = slides[currentIndex];
 
@@ -151,59 +156,31 @@ export function ComparePhotoModal({
         className="flex h-full w-full items-center justify-center p-4 pt-14 pb-14"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex h-full max-w-full shrink-0 gap-0 aspect-[3/2] w-auto">
-          <div className="relative flex-1 min-w-0">
-            {slide.leftSrc && isUploadcareUrl(slide.leftSrc) ? (
-              <img
-                src={slide.leftSrc}
-                alt={`${slide.label} - ${leftLabel}`}
-                className="h-full w-full object-contain"
-              />
-            ) : (
-              <Image
-                src={slide.leftSrc}
-                alt={`${slide.label} - ${leftLabel}`}
-                fill
-                className="object-contain"
-                sizes="50vw"
-                priority
-              />
-            )}
-            <span className="absolute bottom-1 left-1 rounded-lg bg-black/60 px-2 py-1 text-xs font-medium text-white">
-              {leftLabel}
-              {leftWeight != null &&
-              leftWeight !== "" &&
-              leftWeight !== "—" && (
-                <> · {leftWeight}</>
-              )}
-            </span>
-          </div>
-          <div className="relative flex-1 min-w-0">
-            {slide.rightSrc && isUploadcareUrl(slide.rightSrc) ? (
-              <img
-                src={slide.rightSrc}
-                alt={`${slide.label} - ${rightLabel}`}
-                className="h-full w-full object-contain"
-              />
-            ) : (
-              <Image
-                src={slide.rightSrc}
-                alt={`${slide.label} - ${rightLabel}`}
-                fill
-                className="object-contain"
-                sizes="50vw"
-                priority
-              />
-            )}
-            <span className="absolute bottom-1 left-1 rounded-lg bg-black/60 px-2 py-1 text-xs font-medium text-white">
-              {rightLabel}
-              {rightWeight != null &&
-              rightWeight !== "" &&
-              rightWeight !== "—" && (
-                <> · {rightWeight}</>
-              )}
-            </span>
-          </div>
+        <div className="flex h-full max-w-full shrink-0 gap-0 aspect-3/2 w-auto">
+          <ZoomableImage
+            src={slide.leftSrc}
+            alt={`${slide.label} - ${leftLabel}`}
+            label={leftLabel}
+            secondaryLabel={leftWeight}
+            zoom={leftImageSettings?.zoom}
+            brightness={leftImageSettings?.brightness}
+            contrast={leftImageSettings?.contrast}
+            onZoomChange={setLeftImageSettings?.setZoom}
+            onBrightnessChange={setLeftImageSettings?.setBrightness}
+            onContrastChange={setLeftImageSettings?.setContrast}
+          />
+          <ZoomableImage
+            src={slide.rightSrc}
+            alt={`${slide.label} - ${rightLabel}`}
+            label={rightLabel}
+            secondaryLabel={rightWeight}
+            zoom={rightImageSettings?.zoom}
+            brightness={rightImageSettings?.brightness}
+            contrast={rightImageSettings?.contrast}
+            onZoomChange={setRightImageSettings?.setZoom}
+            onBrightnessChange={setRightImageSettings?.setBrightness}
+            onContrastChange={setRightImageSettings?.setContrast}
+          />
         </div>
       </div>
 
