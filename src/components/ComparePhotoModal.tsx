@@ -40,7 +40,7 @@ export function ComparePhotoModal({
   setRightImageSettings,
 }: ComparePhotoModalProps) {
   const slide = slides[currentIndex];
-  const [showControls, setShowControls] = useState(true);
+  const [showControls, setShowControls] = useState(false);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
