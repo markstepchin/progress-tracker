@@ -74,13 +74,13 @@ export function CompareView({ checkIns }: CompareViewProps) {
     selectedValue: string,
     onSelect: (id: string) => void,
   ) => (
-    <div className="space-y-3">
-      <div className="flex items-center">
+    <div className="min-w-0 space-y-3">
+      <div className="flex min-w-0 items-center">
         <span className="text-sm font-medium text-zinc-500">{label}</span>
         <select
           value={selectedValue}
           onChange={(e) => onSelect(e.target.value)}
-          className="flex-1 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400 focus:outline-none"
+          className="min-w-0 flex-1 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400 focus:outline-none"
         >
           <option value="">Select check-in</option>
           {checkIns.map((c) => (
@@ -159,9 +159,12 @@ export function CompareView({ checkIns }: CompareViewProps) {
         </div>
       )}
       <div className="flex gap-1">
-        {renderCheckInCard(checkInA, "", selectedA, setSelectedA)}
-
-        {renderCheckInCard(checkInB, "", selectedB, setSelectedB)}
+        <div className="min-w-0 flex-1">
+          {renderCheckInCard(checkInA, "", selectedA, setSelectedA)}
+        </div>
+        <div className="min-w-0 flex-1">
+          {renderCheckInCard(checkInB, "", selectedB, setSelectedB)}
+        </div>
       </div>
 
       {modalOpen && checkInA && checkInB && (

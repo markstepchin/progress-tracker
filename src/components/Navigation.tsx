@@ -3,10 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const navItems = [
-  { href: "/", label: "Check-Ins" },
-  { href: "/compare", label: "Compare" },
-];
+const navItems = [{ href: "/compare", label: "Compare" }];
 
 export function Navigation() {
   const pathname = usePathname();
