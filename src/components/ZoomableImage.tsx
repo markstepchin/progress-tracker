@@ -38,6 +38,8 @@ interface ZoomableImageProps {
   onBrightnessChange?: (value: number | null) => void;
   /** Callback when contrast changes (for controlled mode) */
   onContrastChange?: (value: number | null) => void;
+  /** Controlled visibility of controls (when provided, hides internal toggle) */
+  showControls?: boolean;
 }
 
 /**
@@ -89,6 +91,7 @@ export function ZoomableImage({
   onZoomChange,
   onBrightnessChange,
   onContrastChange,
+  showControls = true,
 }: ZoomableImageProps) {
   // Internal state for uncontrolled mode
   const [internalZoom, setInternalZoom] = useState(1);
@@ -338,125 +341,129 @@ export function ZoomableImage({
        * - These are OUTSIDE the ClipContainer so they don't zoom/pan with the image
        */}
       <div className="absolute top-1 right-1 z-10 flex flex-col gap-1">
-        {/* Zoom controls: minus, percentage display, plus, and reset (when zoomed) */}
-        <div className="flex items-center gap-0.5 rounded-lg bg-black/60 px-1.5 py-1 backdrop-blur-sm">
-          <button
-            type="button"
-            onClick={() => setZoom((z) => Math.max(ZOOM_MIN, z - ZOOM_STEP))}
-            className="rounded p-0.5 text-white/80 hover:bg-white/20 hover:text-white"
-            aria-label="Zoom out"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
-            </svg>
-          </button>
-          <span className="min-w-10 text-center text-xs text-white/90">
-            {Math.round(zoom * 100)}%
-          </span>
-          <button
-            type="button"
-            onClick={() => setZoom((z) => Math.min(ZOOM_MAX, z + ZOOM_STEP))}
-            className="rounded p-0.5 text-white/80 hover:bg-white/20 hover:text-white"
-            aria-label="Zoom in"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
-            </svg>
-          </button>
-          {zoom !== 1 && (
+        {showControls && (
+          <>
+            {/* Zoom controls: minus, percentage display, plus, and reset (when zoomed) */}
+            <div className="flex items-center gap-0.5 rounded-lg bg-black/60 px-1.5 py-1 backdrop-blur-sm">
+              <button
+                type="button"
+                onClick={() => setZoom((z) => Math.max(ZOOM_MIN, z - ZOOM_STEP))}
+                className="rounded p-0.5 text-white/80 hover:bg-white/20 hover:text-white"
+                aria-label="Zoom out"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
+                </svg>
+              </button>
+              <span className="min-w-10 text-center text-xs text-white/90">
+                {Math.round(zoom * 100)}%
+              </span>
+              <button
+                type="button"
+                onClick={() => setZoom((z) => Math.min(ZOOM_MAX, z + ZOOM_STEP))}
+                className="rounded p-0.5 text-white/80 hover:bg-white/20 hover:text-white"
+                aria-label="Zoom in"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
+                </svg>
+              </button>
+              {zoom !== 1 && (
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  className="ml-0.5 rounded p-0.5 text-white/80 hover:bg-white/20 hover:text-white"
+                  aria-label="Reset zoom and position"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            {/* Brightness control: sun icon and slider */}
+            <div className="flex items-center gap-1 rounded-lg bg-black/60 px-1.5 py-1 backdrop-blur-sm">
+              <svg className="h-4 w-4 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+              <input
+                type="range"
+                min={BRIGHTNESS_MIN}
+                max={BRIGHTNESS_MAX}
+                step={BRIGHTNESS_STEP}
+                value={brightness}
+                onChange={(e) => setBrightness(parseFloat(e.target.value))}
+                className="h-1 w-16 cursor-pointer appearance-none rounded-full bg-white/30 accent-white"
+                aria-label="Brightness"
+              />
+              {brightness !== 1 && (
+                <button
+                  type="button"
+                  onClick={() => setBrightness(1)}
+                  className="rounded p-0.5 text-white/80 hover:bg-white/20 hover:text-white"
+                  aria-label="Reset brightness"
+                >
+                  <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            {/* Contrast control: half-circle icon and slider */}
+            <div className="flex items-center gap-1 rounded-lg bg-black/60 px-1.5 py-1 backdrop-blur-sm">
+              <svg className="h-4 w-4 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3a9 9 0 100 18 9 9 0 000-18z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18" fill="currentColor" />
+              </svg>
+              <input
+                type="range"
+                min={CONTRAST_MIN}
+                max={CONTRAST_MAX}
+                step={CONTRAST_STEP}
+                value={contrast}
+                onChange={(e) => setContrast(parseFloat(e.target.value))}
+                className="h-1 w-16 cursor-pointer appearance-none rounded-full bg-white/30 accent-white"
+                aria-label="Contrast"
+              />
+              {contrast !== 1 && (
+                <button
+                  type="button"
+                  onClick={() => setContrast(1)}
+                  className="rounded p-0.5 text-white/80 hover:bg-white/20 hover:text-white"
+                  aria-label="Reset contrast"
+                >
+                  <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            {/* Grid toggle: shows/hides rule-of-thirds grid overlay */}
             <button
               type="button"
-              onClick={handleReset}
-              className="ml-0.5 rounded p-0.5 text-white/80 hover:bg-white/20 hover:text-white"
-              aria-label="Reset zoom and position"
+              onClick={() => setShowGrid((g) => !g)}
+              className={`flex items-center gap-1.5 rounded-lg px-1.5 py-1 backdrop-blur-sm transition-colors ${
+                showGrid ? "bg-white/30 text-white" : "bg-black/60 text-white/80 hover:bg-white/20 hover:text-white"
+              }`}
+              aria-label={showGrid ? "Hide grid" : "Show grid"}
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4h16v16H4V4z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 9.333h16M4 14.667h16M9.333 4v16M14.667 4v16" />
               </svg>
+              <span className="text-xs">Grid</span>
             </button>
-          )}
-        </div>
 
-        {/* Brightness control: sun icon and slider */}
-        <div className="flex items-center gap-1 rounded-lg bg-black/60 px-1.5 py-1 backdrop-blur-sm">
-          <svg className="h-4 w-4 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-          </svg>
-          <input
-            type="range"
-            min={BRIGHTNESS_MIN}
-            max={BRIGHTNESS_MAX}
-            step={BRIGHTNESS_STEP}
-            value={brightness}
-            onChange={(e) => setBrightness(parseFloat(e.target.value))}
-            className="h-1 w-16 cursor-pointer appearance-none rounded-full bg-white/30 accent-white"
-            aria-label="Brightness"
-          />
-          {brightness !== 1 && (
-            <button
-              type="button"
-              onClick={() => setBrightness(1)}
-              className="rounded p-0.5 text-white/80 hover:bg-white/20 hover:text-white"
-              aria-label="Reset brightness"
-            >
-              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            </button>
-          )}
-        </div>
-
-        {/* Contrast control: half-circle icon and slider */}
-        <div className="flex items-center gap-1 rounded-lg bg-black/60 px-1.5 py-1 backdrop-blur-sm">
-          <svg className="h-4 w-4 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 3a9 9 0 100 18 9 9 0 000-18z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18" fill="currentColor" />
-          </svg>
-          <input
-            type="range"
-            min={CONTRAST_MIN}
-            max={CONTRAST_MAX}
-            step={CONTRAST_STEP}
-            value={contrast}
-            onChange={(e) => setContrast(parseFloat(e.target.value))}
-            className="h-1 w-16 cursor-pointer appearance-none rounded-full bg-white/30 accent-white"
-            aria-label="Contrast"
-          />
-          {contrast !== 1 && (
-            <button
-              type="button"
-              onClick={() => setContrast(1)}
-              className="rounded p-0.5 text-white/80 hover:bg-white/20 hover:text-white"
-              aria-label="Reset contrast"
-            >
-              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            </button>
-          )}
-        </div>
-
-        {/* Grid toggle: shows/hides rule-of-thirds grid overlay */}
-        <button
-          type="button"
-          onClick={() => setShowGrid((g) => !g)}
-          className={`flex items-center gap-1.5 rounded-lg px-1.5 py-1 backdrop-blur-sm transition-colors ${
-            showGrid ? "bg-white/30 text-white" : "bg-black/60 text-white/80 hover:bg-white/20 hover:text-white"
-          }`}
-          aria-label={showGrid ? "Hide grid" : "Show grid"}
-        >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4h16v16H4V4z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 9.333h16M4 14.667h16M9.333 4v16M14.667 4v16" />
-          </svg>
-          <span className="text-xs">Grid</span>
-        </button>
-
-        {/* Pan hint - shown when zoomed to indicate dragging is available */}
-        {canPan && !isDragging && (
-          <div className="rounded-lg bg-black/60 px-1.5 py-1 text-center text-xs text-white/70 backdrop-blur-sm">
-            Drag to pan
-          </div>
+            {/* Pan hint - shown when zoomed to indicate dragging is available */}
+            {canPan && !isDragging && (
+              <div className="rounded-lg bg-black/60 px-1.5 py-1 text-center text-xs text-white/70 backdrop-blur-sm">
+                Drag to pan
+              </div>
+            )}
+          </>
         )}
       </div>
 

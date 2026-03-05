@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { ZoomableImage } from "./ZoomableImage";
 import type { ImageSettings, ImageSettingsSetters } from "./CompareView";
 
@@ -40,6 +40,7 @@ export function ComparePhotoModal({
   setRightImageSettings,
 }: ComparePhotoModalProps) {
   const slide = slides[currentIndex];
+  const [showControls, setShowControls] = useState(true);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -71,26 +72,45 @@ export function ComparePhotoModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
       onClick={onClose}
     >
-      <button
-        type="button"
-        onClick={onClose}
-        className="absolute top-4 right-4 z-10 rounded-full bg-white/10 p-2 text-white backdrop-blur-sm transition-colors hover:bg-white/20"
-        aria-label="Close"
-      >
-        <svg
-          className="h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
+      {/* Top right: controls toggle and close button */}
+      <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowControls((s) => !s);
+          }}
+          className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium backdrop-blur-sm transition-colors ${
+            showControls ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15 hover:text-white"
+          }`}
+          aria-label={showControls ? "Hide controls" : "Show controls"}
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M6 18L18 6M6 6l12 12"
-          />
-        </svg>
-      </button>
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
+          </svg>
+          Controls
+        </button>
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-full bg-white/10 p-2 text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+          aria-label="Close"
+        >
+          <svg
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </div>
 
       {/* View type label (e.g. Front / Side / Back) */}
       <div className="absolute top-4 left-4 z-10 rounded-full bg-white/10 px-3 py-1 text-sm font-medium text-white backdrop-blur-sm">
@@ -168,6 +188,7 @@ export function ComparePhotoModal({
             onZoomChange={setLeftImageSettings?.setZoom}
             onBrightnessChange={setLeftImageSettings?.setBrightness}
             onContrastChange={setLeftImageSettings?.setContrast}
+            showControls={showControls}
           />
           <ZoomableImage
             src={slide.rightSrc}
@@ -180,6 +201,7 @@ export function ComparePhotoModal({
             onZoomChange={setRightImageSettings?.setZoom}
             onBrightnessChange={setRightImageSettings?.setBrightness}
             onContrastChange={setRightImageSettings?.setContrast}
+            showControls={showControls}
           />
         </div>
       </div>
