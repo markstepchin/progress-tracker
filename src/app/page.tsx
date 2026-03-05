@@ -44,26 +44,6 @@ export default function HomePage() {
           <h1 className="text-2xl font-bold text-zinc-900">Progress</h1>
           <p className="text-sm text-zinc-500">Track your transformation</p>
         </div>
-
-        <Link
-          href="/new-check-in"
-          className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-800 active:scale-95"
-        >
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 4.5v15m7.5-7.5h-15"
-            />
-          </svg>
-          New
-        </Link>
       </div>
 
       {/* Error state */}
@@ -82,9 +62,13 @@ export default function HomePage() {
       )}
 
       {/* Journey timeline */}
-      {!isLoading && !error && checkIns && milestones && milestones.length >= 2 && (
-        <JourneyLine checkIns={checkIns} milestones={milestones} />
-      )}
+      {!isLoading &&
+        !error &&
+        checkIns &&
+        milestones &&
+        milestones.length >= 2 && (
+          <JourneyLine checkIns={checkIns} milestones={milestones} />
+        )}
 
       {/* View all check-ins link */}
       {!isLoading && !error && checkIns && checkIns.length > 0 && (

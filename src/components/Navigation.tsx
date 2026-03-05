@@ -19,7 +19,7 @@ export function Navigation() {
             Progress
           </Link>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-3">
             {navItems.map((item) => {
               const isActive =
                 pathname === item.href ||
@@ -39,6 +39,24 @@ export function Navigation() {
                 </Link>
               );
             })}
+            <Link
+              href="/new-check-in"
+              className="inline-flex items-center gap-2 rounded-full bg-zinc-900 p-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-800 active:scale-95"
+            >
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 4.5v15m7.5-7.5h-15"
+                />
+              </svg>
+            </Link>
           </div>
         </div>
       </div>
