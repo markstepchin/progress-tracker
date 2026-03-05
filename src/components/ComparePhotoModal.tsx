@@ -14,6 +14,8 @@ interface ComparePhotoModalProps {
   currentIndex: number;
   leftLabel: string;
   rightLabel: string;
+  leftWeight?: string;
+  rightWeight?: string;
   onClose: () => void;
   onNavigate: (index: number) => void;
 }
@@ -27,6 +29,8 @@ export function ComparePhotoModal({
   currentIndex,
   leftLabel,
   rightLabel,
+  leftWeight,
+  rightWeight,
   onClose,
   onNavigate,
 }: ComparePhotoModalProps) {
@@ -165,8 +169,13 @@ export function ComparePhotoModal({
                 priority
               />
             )}
-            <span className="absolute bottom-1 left-1 text-xs font-medium text-white drop-shadow-md">
+            <span className="absolute bottom-1 left-1 rounded-lg bg-black/60 px-2 py-1 text-xs font-medium text-white">
               {leftLabel}
+              {leftWeight != null &&
+              leftWeight !== "" &&
+              leftWeight !== "—" && (
+                <> · {leftWeight}</>
+              )}
             </span>
           </div>
           <div className="relative flex-1 min-w-0">
@@ -186,8 +195,13 @@ export function ComparePhotoModal({
                 priority
               />
             )}
-            <span className="absolute bottom-1 left-1 text-xs font-medium text-white drop-shadow-md">
+            <span className="absolute bottom-1 left-1 rounded-lg bg-black/60 px-2 py-1 text-xs font-medium text-white">
               {rightLabel}
+              {rightWeight != null &&
+              rightWeight !== "" &&
+              rightWeight !== "—" && (
+                <> · {rightWeight}</>
+              )}
             </span>
           </div>
         </div>

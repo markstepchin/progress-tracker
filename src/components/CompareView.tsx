@@ -173,6 +173,8 @@ export function CompareView({ checkIns }: CompareViewProps) {
           currentIndex={modalIndex}
           leftLabel={formatDate(checkInA.date)}
           rightLabel={formatDate(checkInB.date)}
+          leftWeight={formatWeight(checkInA.weight)}
+          rightWeight={formatWeight(checkInB.weight)}
           onClose={() => setModalOpen(false)}
           onNavigate={setModalIndex}
         />

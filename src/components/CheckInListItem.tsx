@@ -43,9 +43,9 @@ export function CheckInListItem({
     <>
       <Link
         href={`/check-in/${id}`}
-        className="block rounded-xl border border-zinc-200 bg-white p-4 transition-all hover:border-zinc-300 hover:shadow-sm active:scale-[0.99]"
+        className="block rounded-xl border border-zinc-200 bg-white p-2 transition-all hover:border-zinc-300 hover:shadow-sm active:scale-[0.99]"
       >
-        <div className="flex items-center gap-4">
+        <div className="flex gap-4">
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-zinc-900">{formatDate(date)}</p>
             <p className="text-sm text-zinc-500">{formatWeight(weight)}</p>
