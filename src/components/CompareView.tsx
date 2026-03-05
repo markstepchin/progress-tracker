@@ -3,7 +3,8 @@
 import Image from "next/image";
 import { useState } from "react";
 import { formatDate, formatWeight } from "~/utils/formatters";
-import { PhotoModal } from "./PhotoModal";
+import { ComparePhotoModal } from "./ComparePhotoModal";
+import type { CompareSlide } from "./ComparePhotoModal";
 import { EmptyState } from "./EmptyState";
 import type { RouterOutputs } from "~/trpc/react";
 
@@ -17,9 +18,6 @@ export function CompareView({ checkIns }: CompareViewProps) {
   const [selectedA, setSelectedA] = useState<string>("");
   const [selectedB, setSelectedB] = useState<string>("");
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalPhotos, setModalPhotos] = useState<
-    { src: string; label: string }[]
-  >([]);
   const [modalIndex, setModalIndex] = useState(0);
 
   const checkInA = checkIns.find((c) => c.id === selectedA);
@@ -43,16 +41,32 @@ export function CompareView({ checkIns }: CompareViewProps) {
     );
   }
 
-  const openModal = (checkIn: CheckIn, index: number) => {
-    const photos = [
-      { src: checkIn.frontPhoto, label: "Front" },
-      { src: checkIn.sidePhoto, label: "Side" },
-      { src: checkIn.backPhoto, label: "Back" },
-    ];
-    setModalPhotos(photos);
-    setModalIndex(index);
+  const openCompareModal = (viewIndex: number) => {
+    if (!checkInA || !checkInB) return;
+    setModalIndex(viewIndex);
     setModalOpen(true);
   };
+
+  const compareSlides: CompareSlide[] =
+    checkInA && checkInB
+      ? [
+          {
+            label: "Front",
+            leftSrc: checkInA.frontPhoto,
+            rightSrc: checkInB.frontPhoto,
+          },
+          {
+            label: "Side",
+            leftSrc: checkInA.sidePhoto,
+            rightSrc: checkInB.sidePhoto,
+          },
+          {
+            label: "Back",
+            leftSrc: checkInA.backPhoto,
+            rightSrc: checkInB.backPhoto,
+          },
+        ]
+      : [];
 
   const renderCheckInCard = (
     checkIn: CheckIn | undefined,
@@ -61,7 +75,7 @@ export function CompareView({ checkIns }: CompareViewProps) {
     onSelect: (id: string) => void,
   ) => (
     <div className="space-y-3">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center">
         <span className="text-sm font-medium text-zinc-500">{label}</span>
         <select
           value={selectedValue}
@@ -78,16 +92,7 @@ export function CompareView({ checkIns }: CompareViewProps) {
       </div>
 
       {checkIn ? (
-        <div className="rounded-xl border border-zinc-200 bg-white p-4">
-          {/* <div className="mb-3 flex items-baseline justify-between">
-            <span className="font-semibold text-zinc-900">
-              {formatDate(checkIn.date)}
-            </span>
-            <span className="text-sm text-zinc-500">
-              {formatWeight(checkIn.weight)}
-            </span>
-          </div> */}
-
+        <div>
           <div className="flex flex-col gap-2">
             {[
               { src: checkIn.frontPhoto, label: "Front" },
@@ -97,8 +102,11 @@ export function CompareView({ checkIns }: CompareViewProps) {
               <button
                 key={photo.label}
                 type="button"
-                onClick={() => openModal(checkIn, index)}
-                className="group relative aspect-[4/5] overflow-hidden rounded-lg bg-zinc-100 transition-transform active:scale-[0.98]"
+                onClick={() =>
+                  checkInA && checkInB ? openCompareModal(index) : undefined
+                }
+                disabled={!(checkInA && checkInB)}
+                className="group relative aspect-[4/5] overflow-hidden rounded-lg bg-zinc-100 transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {photo.src && photo.src.includes("ufs.sh") ? (
                   <img
@@ -150,16 +158,18 @@ export function CompareView({ checkIns }: CompareViewProps) {
           </p>
         </div>
       )}
-      <div className="flex gap-3 space-y-6">
+      <div className="flex gap-1">
         {renderCheckInCard(checkInA, "", selectedA, setSelectedA)}
 
         {renderCheckInCard(checkInB, "", selectedB, setSelectedB)}
       </div>
 
-      {modalOpen && (
-        <PhotoModal
-          photos={modalPhotos}
+      {modalOpen && checkInA && checkInB && (
+        <ComparePhotoModal
+          slides={compareSlides}
           currentIndex={modalIndex}
+          leftLabel={formatDate(checkInA.date)}
+          rightLabel={formatDate(checkInB.date)}
           onClose={() => setModalOpen(false)}
           onNavigate={setModalIndex}
         />
