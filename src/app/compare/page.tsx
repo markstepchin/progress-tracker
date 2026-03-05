@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { Suspense } from "react";
 import { useQueryState, parseAsString, parseAsFloat } from "nuqs";
 import { api } from "~/trpc/react";
 import { CompareView } from "~/components/CompareView";
 import { CompareSkeleton } from "~/components/LoadingSkeleton";
 
-export default function ComparePage() {
+function ComparePageContent() {
   const { data: checkIns, isLoading, error } = api.checkIn.getAll.useQuery();
 
   const [selectedA, setSelectedA] = useQueryState(
@@ -18,7 +19,6 @@ export default function ComparePage() {
     parseAsString.withDefault(""),
   );
 
-  // Image adjustment settings for left (A) and right (B) images
   const [zoomA, setZoomA] = useQueryState("zA", parseAsFloat.withDefault(1));
   const [zoomB, setZoomB] = useQueryState("zB", parseAsFloat.withDefault(1));
   const [brightnessA, setBrightnessA] = useQueryState(
@@ -93,5 +93,13 @@ export default function ComparePage() {
         />
       )}
     </div>
+  );
+}
+
+export default function ComparePage() {
+  return (
+    <Suspense fallback={<CompareSkeleton />}>
+      <ComparePageContent />
+    </Suspense>
   );
 }
