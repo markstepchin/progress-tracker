@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useState, useRef, useEffect, useCallback } from "react";
 
 /**
- * Configuration constants for zoom, brightness, and contrast controls.
+ * Configuration constants for zoom, brightness, contrast, and rotation controls.
  * Adjust these to change the behavior of the component.
  */
 const ZOOM_STEP = 0.25;
@@ -16,6 +16,9 @@ const BRIGHTNESS_STEP = 0.1;
 const CONTRAST_MIN = 0.5;
 const CONTRAST_MAX = 1.5;
 const CONTRAST_STEP = 0.1;
+const ROTATION_MIN = -15;
+const ROTATION_MAX = 15;
+const ROTATION_STEP = 0.5;
 
 interface ZoomableImageProps {
   /** The image source URL */
@@ -28,16 +31,26 @@ interface ZoomableImageProps {
   secondaryLabel?: string;
   /** Controlled zoom value (1 = 100%) */
   zoom?: number;
+  /** Controlled pan X value (0 = centered) */
+  panX?: number;
+  /** Controlled pan Y value (0 = centered) */
+  panY?: number;
   /** Controlled brightness value (1 = 100%) */
   brightness?: number;
   /** Controlled contrast value (1 = 100%) */
   contrast?: number;
+  /** Controlled rotation value in degrees (0 = no rotation) */
+  rotation?: number;
   /** Callback when zoom changes (for controlled mode) */
   onZoomChange?: (value: number | null) => void;
+  /** Callback when pan changes (for controlled mode) */
+  onPanChange?: (x: number | null, y: number | null) => void;
   /** Callback when brightness changes (for controlled mode) */
   onBrightnessChange?: (value: number | null) => void;
   /** Callback when contrast changes (for controlled mode) */
   onContrastChange?: (value: number | null) => void;
+  /** Callback when rotation changes (for controlled mode) */
+  onRotationChange?: (value: number | null) => void;
   /** Controlled visibility of controls (when provided, hides internal toggle) */
   showControls?: boolean;
 }
@@ -86,28 +99,39 @@ export function ZoomableImage({
   label,
   secondaryLabel,
   zoom: controlledZoom,
+  panX: controlledPanX,
+  panY: controlledPanY,
   brightness: controlledBrightness,
   contrast: controlledContrast,
+  rotation: controlledRotation,
   onZoomChange,
+  onPanChange,
   onBrightnessChange,
   onContrastChange,
+  onRotationChange,
   showControls = true,
 }: ZoomableImageProps) {
   // Internal state for uncontrolled mode
   const [internalZoom, setInternalZoom] = useState(1);
+  const [internalPan, setInternalPan] = useState({ x: 0, y: 0 });
   const [internalBrightness, setInternalBrightness] = useState(1);
   const [internalContrast, setInternalContrast] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [internalRotation, setInternalRotation] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
   const dragStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Use controlled values if provided, otherwise use internal state
-  const isControlled = controlledZoom !== undefined;
   const zoom = controlledZoom ?? internalZoom;
+  const pan = {
+    x: controlledPanX ?? internalPan.x,
+    y: controlledPanY ?? internalPan.y,
+  };
+  const isPanControlled = onPanChange !== undefined;
   const brightness = controlledBrightness ?? internalBrightness;
   const contrast = controlledContrast ?? internalContrast;
+  const rotation = controlledRotation ?? internalRotation;
 
   // Setters that work in both controlled and uncontrolled mode
   const setZoom = useCallback(
@@ -146,12 +170,39 @@ export function ZoomableImage({
     [contrast, onContrastChange],
   );
 
+  const setRotation = useCallback(
+    (value: number | ((prev: number) => number)) => {
+      const newValue = typeof value === "function" ? value(rotation) : value;
+      if (onRotationChange) {
+        onRotationChange(newValue === 0 ? null : newValue);
+      } else {
+        setInternalRotation(newValue);
+      }
+    },
+    [rotation, onRotationChange],
+  );
+
+  // Helper to update pan (handles controlled vs uncontrolled)
+  const updatePan = useCallback(
+    (newPan: { x: number; y: number }) => {
+      if (onPanChange) {
+        onPanChange(
+          newPan.x === 0 ? null : newPan.x,
+          newPan.y === 0 ? null : newPan.y
+        );
+      } else {
+        setInternalPan(newPan);
+      }
+    },
+    [onPanChange]
+  );
+
   // Reset pan when zoom returns to 1
   useEffect(() => {
-    if (zoom === 1) {
-      setPan({ x: 0, y: 0 });
+    if (zoom === 1 && (pan.x !== 0 || pan.y !== 0)) {
+      updatePan({ x: 0, y: 0 });
     }
-  }, [zoom]);
+  }, [zoom, pan.x, pan.y, updatePan]);
 
   // Calculate max pan distance based on zoom level.
   // At zoom 1, pan should be 0. At higher zoom, allow panning up to the extra area.
@@ -175,10 +226,19 @@ export function ZoomableImage({
     [getMaxPan]
   );
 
+  // Track previous zoom to detect actual zoom changes
+  const prevZoomRef = useRef(zoom);
+  
   // When zoom changes, clamp pan to new valid range
   useEffect(() => {
-    setPan((prev) => clampPan(prev));
-  }, [zoom, clampPan]);
+    if (prevZoomRef.current !== zoom) {
+      prevZoomRef.current = zoom;
+      const clamped = clampPan(pan);
+      if (clamped.x !== pan.x || clamped.y !== pan.y) {
+        updatePan(clamped);
+      }
+    }
+  }, [zoom, clampPan, pan, updatePan]);
 
   // Handle mouse wheel for zooming
   const handleWheel = (e: React.WheelEvent) => {
@@ -206,14 +266,14 @@ export function ZoomableImage({
       if (!isDragging) return;
       const dx = e.clientX - dragStartRef.current.x;
       const dy = e.clientY - dragStartRef.current.y;
-      setPan(
+      updatePan(
         clampPan({
           x: dragStartRef.current.panX + dx,
           y: dragStartRef.current.panY + dy,
         })
       );
     },
-    [isDragging, clampPan]
+    [isDragging, clampPan, updatePan]
   );
 
   // Handle drag end
@@ -239,21 +299,24 @@ export function ZoomableImage({
     } else {
       setInternalZoom(1);
     }
-    setPan({ x: 0, y: 0 });
+    updatePan({ x: 0, y: 0 });
   };
 
-  const isModified = zoom !== 1 || brightness !== 1 || contrast !== 1;
+  const isModified = zoom !== 1 || brightness !== 1 || contrast !== 1 || rotation !== 0;
   const canPan = zoom > 1;
 
   return (
     /**
      * OuterContainer: The root element that participates in flex layout.
      * - relative: Establishes positioning context for absolutely positioned children
-     * - flex-1 min-w-0: Takes available space in parent flex container, can shrink below content size
+     * - flex-1 min-w-0 min-h-0: Takes available space, can shrink below content size in both directions
+     * - overflow-hidden: Clips any content that exceeds bounds
+     * - contain: strict: Isolates layout so transforms inside don't affect flex sizing
      */
     <div
       ref={containerRef}
-      className="relative flex-1 min-w-0"
+      className="relative flex-1 min-w-0 min-h-0 overflow-hidden"
+      style={{ contain: "strict" }}
       onWheel={handleWheel}
     >
       {/**
@@ -280,7 +343,7 @@ export function ZoomableImage({
         <div
           className={`h-full w-full ${canPan ? (isDragging ? "cursor-grabbing" : "cursor-grab") : ""}`}
           style={{
-            transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
+            transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px) rotate(${rotation}deg)`,
             filter: `brightness(${brightness}) contrast(${contrast})`,
             transformOrigin: "center center",
           }}
@@ -436,6 +499,35 @@ export function ZoomableImage({
                 >
                   <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            {/* Rotation control: rotate icon and slider */}
+            <div className="flex items-center gap-1 rounded-lg bg-black/60 px-1.5 py-1 backdrop-blur-sm">
+              <svg className="h-4 w-4 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <input
+                type="range"
+                min={ROTATION_MIN}
+                max={ROTATION_MAX}
+                step={ROTATION_STEP}
+                value={rotation}
+                onChange={(e) => setRotation(parseFloat(e.target.value))}
+                className="h-1 w-16 cursor-pointer appearance-none rounded-full bg-white/30 accent-white"
+                aria-label="Rotation"
+              />
+              {rotation !== 0 && (
+                <button
+                  type="button"
+                  onClick={() => setRotation(0)}
+                  className="rounded p-0.5 text-white/80 hover:bg-white/20 hover:text-white"
+                  aria-label="Reset rotation"
+                >
+                  <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               )}

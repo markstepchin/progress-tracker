@@ -81,9 +81,9 @@ export default function CheckInsPage() {
               id={checkIn.id}
               date={checkIn.date}
               weight={checkIn.weight}
-              frontPhoto={checkIn.frontPhoto}
-              sidePhoto={checkIn.sidePhoto}
-              backPhoto={checkIn.backPhoto}
+              frontPhoto={checkIn.frontPhoto.url}
+              sidePhoto={checkIn.sidePhoto.url}
+              backPhoto={checkIn.backPhoto.url}
             />
           ))}
         </div>

@@ -21,9 +21,14 @@ export const checkInRouter = createTRPCRouter({
           date: input.date,
           weight: input.weight,
           notes: input.notes,
-          frontPhoto: input.frontPhotoUrl,
-          sidePhoto: input.sidePhotoUrl,
-          backPhoto: input.backPhotoUrl,
+          frontPhoto: { create: { url: input.frontPhotoUrl } },
+          sidePhoto: { create: { url: input.sidePhotoUrl } },
+          backPhoto: { create: { url: input.backPhotoUrl } },
+        },
+        include: {
+          frontPhoto: true,
+          sidePhoto: true,
+          backPhoto: true,
         },
       });
     }),
@@ -31,12 +36,22 @@ export const checkInRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {
     return ctx.db.checkIn.findMany({
       orderBy: { date: "desc" },
+      include: {
+        frontPhoto: true,
+        sidePhoto: true,
+        backPhoto: true,
+      },
     });
   }),
 
   getMilestones: publicProcedure.query(async ({ ctx }) => {
     const checkIns = await ctx.db.checkIn.findMany({
       orderBy: { date: "asc" },
+      include: {
+        frontPhoto: true,
+        sidePhoto: true,
+        backPhoto: true,
+      },
     });
 
     if (checkIns.length < 2) return [];
@@ -55,6 +70,11 @@ export const checkInRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       return ctx.db.checkIn.findUnique({
         where: { id: input.id },
+        include: {
+          frontPhoto: true,
+          sidePhoto: true,
+          backPhoto: true,
+        },
       });
     }),
 
@@ -119,17 +139,44 @@ export const checkInRouter = createTRPCRouter({
     .input(
       z.object({
         id: z.string(),
+        date: z.coerce.date().optional(),
         notes: z.string().optional(),
-        weight: z.number().positive().optional(),
+        weight: z.number().positive().nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       return ctx.db.checkIn.update({
         where: { id: input.id },
         data: {
-          notes: input.notes,
-          weight: input.weight,
+          ...(input.date !== undefined && { date: input.date }),
+          ...(input.notes !== undefined && { notes: input.notes }),
+          ...(input.weight !== undefined && { weight: input.weight }),
         },
+        include: {
+          frontPhoto: true,
+          sidePhoto: true,
+          backPhoto: true,
+        },
+      });
+    }),
+
+  updateImageAdjustments: publicProcedure
+    .input(
+      z.object({
+        imageId: z.string(),
+        zoom: z.number().min(0.5).max(3).nullable().optional(),
+        panX: z.number().nullable().optional(),
+        panY: z.number().nullable().optional(),
+        brightness: z.number().min(0.5).max(1.5).nullable().optional(),
+        contrast: z.number().min(0.5).max(1.5).nullable().optional(),
+        rotation: z.number().min(-180).max(180).nullable().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { imageId, ...adjustments } = input;
+      return ctx.db.image.update({
+        where: { id: imageId },
+        data: adjustments,
       });
     }),
 });

@@ -12,7 +12,7 @@ interface CheckIn {
 
 interface Milestone extends CheckIn {
   label: string;
-  frontPhoto: string;
+  frontPhoto: { url: string };
 }
 
 interface JourneyLineProps {
@@ -164,15 +164,15 @@ function MilestoneBlob({ milestone }: { milestone: Milestone & { isHighest: bool
   return (
     <div className="flex w-20 flex-col items-center gap-1 rounded-lg bg-zinc-50 p-1.5">
       <div className="relative h-10 w-8 shrink-0 overflow-hidden rounded bg-zinc-200">
-        {milestone.frontPhoto.includes("ufs.sh") ? (
+        {milestone.frontPhoto.url.includes("ufs.sh") ? (
           <img
-            src={milestone.frontPhoto}
+            src={milestone.frontPhoto.url}
             alt={milestone.label}
             className="h-full w-full object-cover"
           />
         ) : (
           <Image
-            src={milestone.frontPhoto}
+            src={milestone.frontPhoto.url}
             alt={milestone.label}
             fill
             className="object-cover"

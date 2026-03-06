@@ -11,15 +11,39 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
+model Image {
+    id  String @id @default(cuid())
+    url String
+
+    // Manual adjustments (user-controlled)
+    zoom       Float?
+    panX       Float?
+    panY       Float?
+    brightness Float?
+    contrast   Float?
+    rotation   Float?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Reverse relations for Prisma (1:1)
+    checkInFront CheckIn? @relation("front")
+    checkInSide  CheckIn? @relation("side")
+    checkInBack  CheckIn? @relation("back")
+}
+
 model CheckIn {
     id     String   @id @default(cuid())
     date   DateTime
     weight Float?
     notes  String?
 
-    frontPhoto String
-    sidePhoto  String
-    backPhoto  String
+    frontPhotoId String @unique
+    frontPhoto   Image  @relation("front", fields: [frontPhotoId], references: [id], onDelete: Cascade)
+    sidePhotoId  String @unique
+    sidePhoto    Image  @relation("side", fields: [sidePhotoId], references: [id], onDelete: Cascade)
+    backPhotoId  String @unique
+    backPhoto    Image  @relation("back", fields: [backPhotoId], references: [id], onDelete: Cascade)
 
     createdAt DateTime @default(now())
 

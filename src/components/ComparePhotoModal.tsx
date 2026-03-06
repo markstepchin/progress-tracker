@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState, useRef } from "react";
 import { ZoomableImage } from "./ZoomableImage";
-import type { ImageSettings, ImageSettingsSetters } from "./CompareView";
+import { api } from "~/trpc/react";
+import type { RouterOutputs } from "~/trpc/react";
+
+type Image = RouterOutputs["checkIn"]["getAll"][number]["frontPhoto"];
 
 export interface CompareSlide {
   label: string;
-  leftSrc: string;
-  rightSrc: string;
+  leftImage: Image;
+  rightImage: Image;
 }
 
 interface ComparePhotoModalProps {
@@ -19,10 +22,168 @@ interface ComparePhotoModalProps {
   rightWeight?: string;
   onClose: () => void;
   onNavigate: (index: number) => void;
-  leftImageSettings?: ImageSettings;
-  rightImageSettings?: ImageSettings;
-  setLeftImageSettings?: ImageSettingsSetters;
-  setRightImageSettings?: ImageSettingsSetters;
+}
+
+interface ImageAdjustments {
+  zoom: number;
+  panX: number;
+  panY: number;
+  brightness: number;
+  contrast: number;
+  rotation: number;
+}
+
+function useImageAdjustments(image: Image) {
+  const [adjustments, setAdjustments] = useState<ImageAdjustments>({
+    zoom: image.zoom ?? 1,
+    panX: image.panX ?? 0,
+    panY: image.panY ?? 0,
+    brightness: image.brightness ?? 1,
+    contrast: image.contrast ?? 1,
+    rotation: image.rotation ?? 0,
+  });
+
+  const utils = api.useUtils();
+  const mutation = api.checkIn.updateImageAdjustments.useMutation({
+    onSuccess: () => {
+      utils.checkIn.getAll.invalidate();
+    },
+  });
+
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingRef = useRef<Partial<ImageAdjustments>>({});
+
+  const debouncedSave = useCallback(
+    (updates: Partial<ImageAdjustments>) => {
+      pendingRef.current = { ...pendingRef.current, ...updates };
+
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+
+      debounceRef.current = setTimeout(() => {
+        const toSave = pendingRef.current;
+        pendingRef.current = {};
+        mutation.mutate({
+          imageId: image.id,
+          zoom: toSave.zoom === 1 ? null : toSave.zoom,
+          panX: toSave.panX === 0 ? null : toSave.panX,
+          panY: toSave.panY === 0 ? null : toSave.panY,
+          brightness: toSave.brightness === 1 ? null : toSave.brightness,
+          contrast: toSave.contrast === 1 ? null : toSave.contrast,
+          rotation: toSave.rotation === 0 ? null : toSave.rotation,
+        });
+      }, 500);
+    },
+    [image.id, mutation],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, []);
+
+  const setZoom = useCallback(
+    (value: number | null) => {
+      const newZoom = value ?? 1;
+      setAdjustments((prev) => ({ ...prev, zoom: newZoom }));
+      debouncedSave({ zoom: newZoom });
+    },
+    [debouncedSave],
+  );
+
+  const setPan = useCallback(
+    (x: number | null, y: number | null) => {
+      const newPanX = x ?? 0;
+      const newPanY = y ?? 0;
+      setAdjustments((prev) => {
+        if (prev.panX === newPanX && prev.panY === newPanY) {
+          return prev;
+        }
+        return { ...prev, panX: newPanX, panY: newPanY };
+      });
+      debouncedSave({ panX: newPanX, panY: newPanY });
+    },
+    [debouncedSave],
+  );
+
+  const setBrightness = useCallback(
+    (value: number | null) => {
+      const newBrightness = value ?? 1;
+      setAdjustments((prev) => ({ ...prev, brightness: newBrightness }));
+      debouncedSave({ brightness: newBrightness });
+    },
+    [debouncedSave],
+  );
+
+  const setContrast = useCallback(
+    (value: number | null) => {
+      const newContrast = value ?? 1;
+      setAdjustments((prev) => ({ ...prev, contrast: newContrast }));
+      debouncedSave({ contrast: newContrast });
+    },
+    [debouncedSave],
+  );
+
+  const setRotation = useCallback(
+    (value: number | null) => {
+      const newRotation = value ?? 0;
+      setAdjustments((prev) => ({ ...prev, rotation: newRotation }));
+      debouncedSave({ rotation: newRotation });
+    },
+    [debouncedSave],
+  );
+
+  return {
+    adjustments,
+    setZoom,
+    setPan,
+    setBrightness,
+    setContrast,
+    setRotation,
+    isSaving: mutation.isPending,
+  };
+}
+
+function CompareImage({
+  image,
+  label,
+  secondaryLabel,
+  slideLabel,
+  showControls,
+}: {
+  image: Image;
+  label: string;
+  secondaryLabel?: string;
+  slideLabel: string;
+  showControls: boolean;
+}) {
+  const { adjustments, setZoom, setPan, setBrightness, setContrast, setRotation } =
+    useImageAdjustments(image);
+
+  return (
+    <ZoomableImage
+      src={image.url}
+      alt={`${slideLabel} - ${label}`}
+      label={label}
+      secondaryLabel={secondaryLabel}
+      zoom={adjustments.zoom}
+      panX={adjustments.panX}
+      panY={adjustments.panY}
+      brightness={adjustments.brightness}
+      contrast={adjustments.contrast}
+      rotation={adjustments.rotation}
+      onZoomChange={setZoom}
+      onPanChange={setPan}
+      onBrightnessChange={setBrightness}
+      onContrastChange={setContrast}
+      onRotationChange={setRotation}
+      showControls={showControls}
+    />
+  );
 }
 
 export function ComparePhotoModal({
@@ -34,10 +195,6 @@ export function ComparePhotoModal({
   rightWeight,
   onClose,
   onNavigate,
-  leftImageSettings,
-  rightImageSettings,
-  setLeftImageSettings,
-  setRightImageSettings,
 }: ComparePhotoModalProps) {
   const slide = slides[currentIndex];
   const [showControls, setShowControls] = useState(false);
@@ -177,30 +334,20 @@ export function ComparePhotoModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex h-full max-w-full shrink-0 gap-0 aspect-3/2 w-auto">
-          <ZoomableImage
-            src={slide.leftSrc}
-            alt={`${slide.label} - ${leftLabel}`}
+          <CompareImage
+            key={slide.leftImage.id}
+            image={slide.leftImage}
             label={leftLabel}
             secondaryLabel={leftWeight}
-            zoom={leftImageSettings?.zoom}
-            brightness={leftImageSettings?.brightness}
-            contrast={leftImageSettings?.contrast}
-            onZoomChange={setLeftImageSettings?.setZoom}
-            onBrightnessChange={setLeftImageSettings?.setBrightness}
-            onContrastChange={setLeftImageSettings?.setContrast}
+            slideLabel={slide.label}
             showControls={showControls}
           />
-          <ZoomableImage
-            src={slide.rightSrc}
-            alt={`${slide.label} - ${rightLabel}`}
+          <CompareImage
+            key={slide.rightImage.id}
+            image={slide.rightImage}
             label={rightLabel}
             secondaryLabel={rightWeight}
-            zoom={rightImageSettings?.zoom}
-            brightness={rightImageSettings?.brightness}
-            contrast={rightImageSettings?.contrast}
-            onZoomChange={setRightImageSettings?.setZoom}
-            onBrightnessChange={setRightImageSettings?.setBrightness}
-            onContrastChange={setRightImageSettings?.setContrast}
+            slideLabel={slide.label}
             showControls={showControls}
           />
         </div>

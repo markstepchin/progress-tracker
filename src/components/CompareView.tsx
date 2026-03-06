@@ -11,28 +11,12 @@ import type { RouterOutputs } from "~/trpc/react";
 
 type CheckIn = RouterOutputs["checkIn"]["getAll"][number];
 
-export interface ImageSettings {
-  zoom: number;
-  brightness: number;
-  contrast: number;
-}
-
-export interface ImageSettingsSetters {
-  setZoom: (value: number | null) => void;
-  setBrightness: (value: number | null) => void;
-  setContrast: (value: number | null) => void;
-}
-
 interface CompareViewProps {
   checkIns: CheckIn[];
   selectedA: string;
   selectedB: string;
   setSelectedA: (value: string | null) => Promise<URLSearchParams>;
   setSelectedB: (value: string | null) => Promise<URLSearchParams>;
-  imageSettingsA: ImageSettings;
-  imageSettingsB: ImageSettings;
-  setImageSettingsA: ImageSettingsSetters;
-  setImageSettingsB: ImageSettingsSetters;
 }
 
 export function CompareView({
@@ -41,10 +25,6 @@ export function CompareView({
   selectedB,
   setSelectedA,
   setSelectedB,
-  imageSettingsA,
-  imageSettingsB,
-  setImageSettingsA,
-  setImageSettingsB,
 }: CompareViewProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalIndex, setModalIndex] = useState(0);
@@ -81,18 +61,18 @@ export function CompareView({
       ? [
           {
             label: "Front",
-            leftSrc: checkInA.frontPhoto,
-            rightSrc: checkInB.frontPhoto,
+            leftImage: checkInA.frontPhoto,
+            rightImage: checkInB.frontPhoto,
           },
           {
             label: "Side",
-            leftSrc: checkInA.sidePhoto,
-            rightSrc: checkInB.sidePhoto,
+            leftImage: checkInA.sidePhoto,
+            rightImage: checkInB.sidePhoto,
           },
           {
             label: "Back",
-            leftSrc: checkInA.backPhoto,
-            rightSrc: checkInB.backPhoto,
+            leftImage: checkInA.backPhoto,
+            rightImage: checkInB.backPhoto,
           },
         ]
       : [];
@@ -103,9 +83,9 @@ export function CompareView({
     return (
       <div className="flex flex-col gap-2">
         {[
-          { src: checkIn.frontPhoto, label: "Front" },
-          { src: checkIn.sidePhoto, label: "Side" },
-          { src: checkIn.backPhoto, label: "Back" },
+          { image: checkIn.frontPhoto, label: "Front" },
+          { image: checkIn.sidePhoto, label: "Side" },
+          { image: checkIn.backPhoto, label: "Back" },
         ].map((photo, index) => (
           <button
             key={photo.label}
@@ -116,15 +96,15 @@ export function CompareView({
             disabled={!(checkInA && checkInB)}
             className="group relative aspect-4/5 overflow-hidden rounded-lg bg-zinc-100 transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {photo.src && photo.src.includes("ufs.sh") ? (
+            {photo.image.url && photo.image.url.includes("ufs.sh") ? (
               <img
-                src={photo.src}
+                src={photo.image.url}
                 alt={photo.label}
                 className="h-full w-full object-cover transition-opacity group-hover:opacity-90"
               />
             ) : (
               <Image
-                src={photo.src}
+                src={photo.image.url}
                 alt={photo.label}
                 fill
                 className="object-cover transition-opacity group-hover:opacity-90"
@@ -191,10 +171,6 @@ export function CompareView({
           rightWeight={formatWeight(checkInB.weight)}
           onClose={() => setModalOpen(false)}
           onNavigate={setModalIndex}
-          leftImageSettings={imageSettingsA}
-          rightImageSettings={imageSettingsB}
-          setLeftImageSettings={setImageSettingsA}
-          setRightImageSettings={setImageSettingsB}
         />
       )}
     </>

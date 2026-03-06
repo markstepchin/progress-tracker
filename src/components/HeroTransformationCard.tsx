@@ -81,15 +81,15 @@ export function HeroTransformationCard({ checkIns }: HeroTransformationCardProps
         <div className="flex justify-center">
           <div className="text-center">
             <div className="relative mx-auto mb-3 aspect-3/4 w-32 overflow-hidden rounded-xl bg-zinc-100">
-              {checkIn.frontPhoto.includes("ufs.sh") ? (
+              {checkIn.frontPhoto.url.includes("ufs.sh") ? (
                 <img
-                  src={checkIn.frontPhoto}
+                  src={checkIn.frontPhoto.url}
                   alt="Front"
                   className="h-full w-full object-cover"
                 />
               ) : (
                 <Image
-                  src={checkIn.frontPhoto}
+                  src={checkIn.frontPhoto.url}
                   alt="Front"
                   fill
                   className="object-cover"
@@ -142,18 +142,18 @@ export function HeroTransformationCard({ checkIns }: HeroTransformationCardProps
   const compareSlides: CompareSlide[] = [
     {
       label: "Front",
-      leftSrc: firstCheckIn.frontPhoto,
-      rightSrc: latestCheckIn.frontPhoto,
+      leftImage: firstCheckIn.frontPhoto,
+      rightImage: latestCheckIn.frontPhoto,
     },
     {
       label: "Side",
-      leftSrc: firstCheckIn.sidePhoto,
-      rightSrc: latestCheckIn.sidePhoto,
+      leftImage: firstCheckIn.sidePhoto,
+      rightImage: latestCheckIn.sidePhoto,
     },
     {
       label: "Back",
-      leftSrc: firstCheckIn.backPhoto,
-      rightSrc: latestCheckIn.backPhoto,
+      leftImage: firstCheckIn.backPhoto,
+      rightImage: latestCheckIn.backPhoto,
     },
   ];
 
@@ -177,15 +177,15 @@ export function HeroTransformationCard({ checkIns }: HeroTransformationCardProps
           {/* First check-in */}
           <div className="text-center">
             <div className="relative mb-2 aspect-3/4 w-28 overflow-hidden rounded-xl bg-zinc-100 sm:w-32">
-              {firstCheckIn.frontPhoto.includes("ufs.sh") ? (
+              {firstCheckIn.frontPhoto.url.includes("ufs.sh") ? (
                 <img
-                  src={firstCheckIn.frontPhoto}
+                  src={firstCheckIn.frontPhoto.url}
                   alt="First check-in"
                   className="h-full w-full object-cover"
                 />
               ) : (
                 <Image
-                  src={firstCheckIn.frontPhoto}
+                  src={firstCheckIn.frontPhoto.url}
                   alt="First check-in"
                   fill
                   className="object-cover"
@@ -221,15 +221,15 @@ export function HeroTransformationCard({ checkIns }: HeroTransformationCardProps
           {/* Latest check-in */}
           <div className="text-center">
             <div className="relative mb-2 aspect-3/4 w-28 overflow-hidden rounded-xl bg-zinc-100 sm:w-32">
-              {latestCheckIn.frontPhoto.includes("ufs.sh") ? (
+              {latestCheckIn.frontPhoto.url.includes("ufs.sh") ? (
                 <img
-                  src={latestCheckIn.frontPhoto}
+                  src={latestCheckIn.frontPhoto.url}
                   alt="Latest check-in"
                   className="h-full w-full object-cover"
                 />
               ) : (
                 <Image
-                  src={latestCheckIn.frontPhoto}
+                  src={latestCheckIn.frontPhoto.url}
                   alt="Latest check-in"
                   fill
                   className="object-cover"

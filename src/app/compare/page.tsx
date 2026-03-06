@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Suspense } from "react";
-import { useQueryState, parseAsString, parseAsFloat } from "nuqs";
+import { useQueryState, parseAsString } from "nuqs";
 import { api } from "~/trpc/react";
 import { CompareView } from "~/components/CompareView";
 import { CompareSkeleton } from "~/components/LoadingSkeleton";
@@ -17,25 +17,6 @@ function ComparePageContent() {
   const [selectedB, setSelectedB] = useQueryState(
     "b",
     parseAsString.withDefault(""),
-  );
-
-  const [zoomA, setZoomA] = useQueryState("zA", parseAsFloat.withDefault(1));
-  const [zoomB, setZoomB] = useQueryState("zB", parseAsFloat.withDefault(1));
-  const [brightnessA, setBrightnessA] = useQueryState(
-    "brA",
-    parseAsFloat.withDefault(1),
-  );
-  const [brightnessB, setBrightnessB] = useQueryState(
-    "brB",
-    parseAsFloat.withDefault(1),
-  );
-  const [contrastA, setContrastA] = useQueryState(
-    "coA",
-    parseAsFloat.withDefault(1),
-  );
-  const [contrastB, setContrastB] = useQueryState(
-    "coB",
-    parseAsFloat.withDefault(1),
   );
 
   return (
@@ -86,10 +67,6 @@ function ComparePageContent() {
           selectedB={selectedB}
           setSelectedA={setSelectedA}
           setSelectedB={setSelectedB}
-          imageSettingsA={{ zoom: zoomA, brightness: brightnessA, contrast: contrastA }}
-          imageSettingsB={{ zoom: zoomB, brightness: brightnessB, contrast: contrastB }}
-          setImageSettingsA={{ setZoom: setZoomA, setBrightness: setBrightnessA, setContrast: setContrastA }}
-          setImageSettingsB={{ setZoom: setZoomB, setBrightness: setBrightnessB, setContrast: setContrastB }}
         />
       )}
     </div>

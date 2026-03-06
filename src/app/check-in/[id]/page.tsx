@@ -78,9 +78,9 @@ export default function CheckInDetailPage() {
           date={checkIn.date}
           weight={checkIn.weight}
           notes={checkIn.notes}
-          frontPhoto={checkIn.frontPhoto}
-          sidePhoto={checkIn.sidePhoto}
-          backPhoto={checkIn.backPhoto}
+          frontPhoto={checkIn.frontPhoto.url}
+          sidePhoto={checkIn.sidePhoto.url}
+          backPhoto={checkIn.backPhoto.url}
         />
       )}
     </div>
